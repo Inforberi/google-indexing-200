@@ -1,51 +1,83 @@
 const fs = require('fs');
-var request = require('request');
-var { google } = require('googleapis');
-var key = require('./service_account.json');
+const { google } = require('googleapis');
+const axios = require('axios');
+const key = require('./service_account.json');
 
-const jwtClient = new google.auth.JWT(
-  key.client_email,
-  null,
-  key.private_key,
-  ['https://www.googleapis.com/auth/indexing'],
-  null
-);
+// Функция для валидации URL
+const isValidUrl = (url) => {
+    try {
+        new URL(url);
+        return true;
+    } catch {
+        return false;
+    }
+};
 
-const batch = fs
-  .readFileSync('urls.txt')
-  .toString()
-  .split('\n');
+// Функция для задержки
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-jwtClient.authorize(function(err, tokens) {
-  if (err) {
-    console.log(err);
-    return;
-  }
+// Функция для обработки одного URL
+async function processUrl(url, jwtClient) {
+    try {
+        const tokens = await jwtClient.authorize();
 
-  const items = batch.map(line => {
-    return {
-      'Content-Type': 'application/http',
-      'Content-ID': '',
-      body:
-        'POST /v3/urlNotifications:publish HTTP/1.1\n' +
-        'Content-Type: application/json\n\n' +
-        JSON.stringify({
-          url: line,
-          type: 'URL_UPDATED'
-        })
-    };
-  });
+        const response = await axios.post(
+            'https://indexing.googleapis.com/v3/urlNotifications:publish',
+            {
+                url: url,
+                type: 'URL_UPDATED',
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${tokens.access_token}`,
+                },
+            }
+        );
 
-  const options = {
-    url: 'https://indexing.googleapis.com/batch',
-    method: 'POST',
-    headers: {
-      'Content-Type': 'multipart/mixed'
-    },
-    auth: { bearer: tokens.access_token },
-    multipart: items
-  };
-  request(options, (err, resp, body) => {
-    console.log(body);
-  });
-});
+        console.log(`✅ Успешно обработан URL: ${url}`);
+        return response.data;
+    } catch (error) {
+        console.error(`❌ Ошибка при обработке URL ${url}:`, error.message);
+        return null;
+    }
+}
+
+async function main() {
+    try {
+        // Чтение и валидация файла
+        const urls = fs
+            .readFileSync('urls.txt', 'utf8')
+            .split('\n')
+            .map((url) => url.trim())
+            .filter((url) => url && isValidUrl(url));
+
+        if (urls.length === 0) {
+            throw new Error('Нет валидных URL в файле');
+        }
+
+        console.log(`📝 Найдено ${urls.length} URL для обработки`);
+
+        const jwtClient = new google.auth.JWT(
+            key.client_email,
+            null,
+            key.private_key,
+            ['https://www.googleapis.com/auth/indexing'],
+            null
+        );
+
+        // Обработка URL с задержкой
+        for (const url of urls) {
+            await processUrl(url, jwtClient);
+            // Задержка 2 секунды между запросами
+            await delay(1000);
+        }
+
+        console.log('✨ Обработка завершена');
+    } catch (error) {
+        console.error('❌ Критическая ошибка:', error.message);
+        process.exit(1);
+    }
+}
+
+main();
