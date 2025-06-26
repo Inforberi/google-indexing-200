@@ -9,7 +9,7 @@
 1. **Скачайте репозиторий и установите зависимости:**
 
     ```bash
-    git clone https://github.com/yourname/google-indexing-api-bulk.git
+    git clone https://github.com/Inforberi/google-indexing-200.git
     cd google-indexing-api-bulk
     npm install
     ```
