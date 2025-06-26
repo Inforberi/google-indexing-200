@@ -55,12 +55,7 @@ async function processUrl(url, jwtClient) {
             }
         );
 
-        const notifyTime =
-            response.data?.urlNotificationMetadata?.latestUpdate?.notifyTime;
-
-        console.log(
-            `✅ [OK] ${url}\n   📅 updated at: ${notifyTime || 'unknown'}\n`
-        );
+        console.log(`✅ [OK] ${url}\n`);
 
         console.log(`✅ Успешно обработан URL: ${url}`);
         return response.data;
@@ -74,7 +69,7 @@ async function main() {
     try {
         // Чтение и валидация файла
         const urls = fs
-            .readFileSync('urls.txt', 'utf8')
+            .readFileSync(urlsPath, 'utf8') // ← исправлено тут!
             .split('\n')
             .map((url) => url.trim())
             .filter((url) => url && isValidUrl(url));
@@ -96,7 +91,7 @@ async function main() {
         // Обработка URL с задержкой
         for (const url of urls) {
             await processUrl(url, jwtClient);
-            // Задержка 2 секунды между запросами
+            // Задержка 1 секунда между запросами
             await delay(1000);
         }
 
