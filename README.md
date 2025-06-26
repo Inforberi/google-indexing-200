@@ -1,42 +1,94 @@
-# google-indexing-api-bulk
+# Google Indexing API Bulk Submission
 
-Created by Steve at [Journey Further SEO](https://www.journeyfurther.com/)
+Скрипт для массовой отправки URL сайта в Google Indexing API для быстрой индексации. Поддерживает несколько сайтов и ключей сервисных аккаунтов. Удобен для SEO, разработки и тестирования.
 
-Requires node.js - https://nodejs.org/en/download/
+---
 
-This script will help you index your website's pages in bulk, without having to manually request each URL for submission in the Search Console interface.
+## Как пользоваться
 
-First off you will need to set up access to the Indexing API in Google Cloud Platform - follow the instructions below.
+1. **Скачайте репозиторий и установите зависимости:**
 
-https://developers.google.com/search/apis/indexing-api/v3/prereqs
+    ```bash
+    git clone https://github.com/yourname/google-indexing-api-bulk.git
+    cd google-indexing-api-bulk
+    npm install
+    ```
 
-Once you have access to Indexing API you'll be able to download a public/private key pair JSON file, this contains all of your credentials and should be saved as "service_account.json".
+2. **Получите сервисный аккаунт для каждого сайта:**
 
-Add the URLs to the urls.txt file that you need to be crawled/indexed.
+   - Откройте Google Cloud Console, настройте проект и сервисный аккаунт для Indexing API ([инструкция Google](https://developers.google.com/search/apis/indexing-api/v3/prereqs)).
+   - Скачайте JSON-файл с ключом сервисного аккаунта.
+   - Поместите каждый ключ в папку `service_accounts/` с уникальным именем, например:
+        - `service_accounts/service_account_studia.json`
+        - `service_accounts/service_account_fifty.json`
 
+3. **Добавьте email сервисного аккаунта как владельца сайта:**
 
-## Verify site ownership in Search Console to submit URLs for indexing
-In this step, you'll verify that you have control over your web property.
+   - Найдите поле `client_email` внутри вашего JSON-файла ключа, например:  
+     `my-service-account@project-id.iam.gserviceaccount.com`
+   - Перейдите в [Google Search Console](https://search.google.com/search-console/welcome), выберите свой сайт, откройте настройки пользователей и добавьте этот email как Owner (Владелец).
 
-To verify ownership of your site you'll need to add your service account email address (see service_account.json - client_email) and add it as an owner ('delegated') of the web property in Search Console.
+4. **Создайте файлы с URL:**
 
-You can find your service account email address in two places:
-- The client_email field in the JSON private key that you downloaded when you created your project.
-- The Service account ID column of the Service Accounts view in the Developer Console.
-- The email address has a format similar to the following:
+   - В папке `urls/` создайте текстовые файлы для каждого сайта:
+        - `urls/urls_studia.txt`
+        - `urls/urls_fifty.txt`
+   - В каждом файле укажите URL по одному на строку:
+        ```
+        https://mysite.ru/page-1
+        https://mysite.ru/page-2
+        ```
 
-For example, "my-service-account@test-project-42.google.com.iam.gserviceaccount.com".
+5. **Убедитесь, что структура проекта такая:**
 
-Then...
+    ```
+    project-root/
+    ├─ index.js
+    ├─ package.json
+    ├─ service_accounts/
+    │    ├─ service_account_studia.json
+    │    └─ service_account_fifty.json
+    ├─ urls/
+    │    ├─ urls_studia.txt
+    │    └─ urls_fifty.txt
+    ```
 
-1. Go to [Google Webmaster Central](https://www.google.com/webmasters/verification/home)
-2. Click your verified property
-3. Scroll down and click 'Add an owner'.
-4. Add your service account email address as an owner to the property.
+6. **Запуск скрипта:**
 
+    - Для сайта "studia":
+      ```bash
+      npm run start studia
+      ```
+    - Для сайта "fifty":
+      ```bash
+      npm run start fifty
+      ```
+    - Если не указать аргумент, по умолчанию будет использоваться `studia`.
 
-## Quotas
+7. **Пример scripts в package.json:**
 
-100 URLs per request batch
+    ```json
+    "scripts": {
+      "start": "node index.js"
+    }
+    ```
 
-200 URLs per day
+8. **После запуска:**
+
+    - В консоли увидите отчёт о количестве URL и статусе отправки для каждого.
+    - Если будут ошибки (например, неправильный ключ или не добавлен email в Search Console) — скрипт напишет об этом.
+
+---
+
+## Важно знать
+
+- **Лимиты Google Indexing API:** максимум 200 URL в сутки для одного сайта.
+- Email сервисного аккаунта **обязательно** должен быть добавлен как Owner для каждого сайта в Google Search Console.
+- Для каждого нового сайта просто добавьте новый ключ и новый файл с URL.
+
+---
+
+**Всё готово!**  
+Массовая отправка ваших страниц в Google теперь — одна команда.
+
+---
