@@ -1,7 +1,27 @@
 const fs = require('fs');
 const { google } = require('googleapis');
 const axios = require('axios');
-const key = require('./service_account.json');
+const path = require('path');
+
+const args = process.argv.slice(2); // Получаем аргументы
+const target = args[0] || 'studia'; // По-умолчанию studia
+
+const serviceAccountPath = path.resolve(
+    __dirname,
+    `service_accounts/service_account_${target}.json`
+);
+const urlsPath = path.resolve(__dirname, `urls/urls_${target}.txt`);
+
+if (!fs.existsSync(serviceAccountPath)) {
+    console.error(`❌ Нет файла сервисного аккаунта: ${serviceAccountPath}`);
+    process.exit(1);
+}
+if (!fs.existsSync(urlsPath)) {
+    console.error(`❌ Нет файла с url: ${urlsPath}`);
+    process.exit(1);
+}
+
+const key = require(serviceAccountPath);
 
 // Функция для валидации URL
 const isValidUrl = (url) => {
@@ -33,6 +53,13 @@ async function processUrl(url, jwtClient) {
                     Authorization: `Bearer ${tokens.access_token}`,
                 },
             }
+        );
+
+        const notifyTime =
+            response.data?.urlNotificationMetadata?.latestUpdate?.notifyTime;
+
+        console.log(
+            `✅ [OK] ${url}\n   📅 updated at: ${notifyTime || 'unknown'}\n`
         );
 
         console.log(`✅ Успешно обработан URL: ${url}`);
